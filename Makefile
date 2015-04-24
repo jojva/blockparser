@@ -22,8 +22,6 @@ INC =                           \
 #-DPROTOSHARES           \
 
 COPT =                          \
-        -g0                     \
-        -O6                     \
         -m64                    \
         -Wall                   \
         -flto                   \
@@ -45,14 +43,17 @@ COPT =                          \
         -Wno-unused-variable    \
         -Wno-unused-parameter   \
 
-LOPT =                          \
-    -s                          \
 
 LIBS =                          \
     -lcrypto                    \
     -ldl                        \
 
+all:COPT += -g0 -O6
+all:LOPT = -s
 all:parser
+
+debug:COPT += -g -O0
+debug:parser
 
 .objs/callback.o : callback.cpp
 	@echo c++ -- callback.cpp
