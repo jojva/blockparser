@@ -7,7 +7,10 @@
     #include <stdarg.h>
     #include <stdlib.h>
 
+    #include "callback.h"
+
     static inline void vError(
+        const Callback *cb,
         int level,
         bool system,
         const char *format,
@@ -30,8 +33,9 @@
 
         fprintf(
             stderr,
-            "%s: %s%s",
+            "%s: %s: %s%s",
             msgType,
+            cb ? cb->name() : "\b\b",
             system ? strerror(errno) : "",
             system ? ": " : ""
         );
@@ -50,13 +54,37 @@
     }
 
     static inline void sysErr(
+        const Callback *cb,
         const char *format,
         ...
     )
     {
         va_list vaList;
         va_start(vaList, format);
-            vError(1, true, format, vaList);
+            vError(cb, 1, true, format, vaList);
+        va_end(vaList);
+    }
+
+    static inline void sysErr(
+        const char *format,
+        ...
+    )
+    {
+        va_list vaList;
+        va_start(vaList, format);
+            vError(NULL, 1, true, format, vaList);
+        va_end(vaList);
+    }
+
+    static inline void errFatal(
+        const Callback *cb,
+        const char *format,
+        ...
+    )
+    {
+        va_list vaList;
+        va_start(vaList, format);
+            vError(cb, 0, false, format, vaList);
         va_end(vaList);
     }
 
@@ -67,7 +95,19 @@
     {
         va_list vaList;
         va_start(vaList, format);
-            vError(0, false, format, vaList);
+            vError(NULL, 0, false, format, vaList);
+        va_end(vaList);
+    }
+
+    static inline void sysErrFatal(
+        const Callback *cb,
+        const char *format,
+        ...
+    )
+    {
+        va_list vaList;
+        va_start(vaList, format);
+            vError(cb, 0, true, format, vaList);
         va_end(vaList);
     }
 
@@ -78,7 +118,19 @@
     {
         va_list vaList;
         va_start(vaList, format);
-            vError(0, true, format, vaList);
+            vError(NULL, 0, true, format, vaList);
+        va_end(vaList);
+    }
+
+    static inline void warning(
+        const Callback *cb,
+        const char *format,
+        ...
+    )
+    {
+        va_list vaList;
+        va_start(vaList, format);
+            vError(cb, 2, false, format, vaList);
         va_end(vaList);
     }
 
@@ -89,7 +141,19 @@
     {
         va_list vaList;
         va_start(vaList, format);
-            vError(2, false, format, vaList);
+            vError(NULL, 2, false, format, vaList);
+        va_end(vaList);
+    }
+
+    static inline void info(
+        const Callback *cb,
+        const char *format,
+        ...
+    )
+    {
+        va_list vaList;
+        va_start(vaList, format);
+            vError(cb, 3, false, format, vaList);
         va_end(vaList);
     }
 
@@ -100,7 +164,7 @@
     {
         va_list vaList;
         va_start(vaList, format);
-            vError(3, false, format, vaList);
+            vError(NULL, 3, false, format, vaList);
         va_end(vaList);
     }
 

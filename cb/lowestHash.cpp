@@ -76,7 +76,7 @@ struct LowestHash:public Callback
         const auto startTime = usecs();
         std::partial_sort(mTop.begin(), mTop.begin() + mNbTop, mTop.end(), compareTo);
         auto elapsed = usecs() - startTime;
-        fprintf(stderr, "lowestHash: sorted top %d elements in %.3f secs\n", mNbTop, elapsed*1e-6);
+        info(this, "sorted top %d elements in %.3f secs\n", mNbTop, elapsed*1e-6);
         uint8_t hash[2*kSHA256ByteSize + 1];
         printf("\n");
         for(int i = 0; i < mNbTop; i++)
