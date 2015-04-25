@@ -1,19 +1,39 @@
 
 // Compute lowest block hash
 
+#include <algorithm>
 #include <util.h>
 #include <common.h>
 #include <option.h>
 #include <callback.h>
+#include <sstream>
+
+bool compareTo(const Block *a, const Block *b)
+{
+    for (int i = kSHA256ByteSize - 1; i >= 0; i--)
+    {
+        if (a->hash[i] < b->hash[i])
+        {
+            return true;
+        }
+        if (a->hash[i] > b->hash[i])
+        {
+            return false;
+        }
+    }
+    return false;
+}
 
 struct LowestHash:public Callback
 {
     optparse::OptionParser parser;
 
-    const Block *mBestBlock;
+    int mNbTop;
+    std::vector<const Block*> mTop;
 
     LowestHash()
-    : mBestBlock(NULL)
+    : mNbTop(10)
+    , mTop()
     {
         parser
             .usage("")
@@ -32,35 +52,44 @@ struct LowestHash:public Callback
         v.push_back("low");
     }
 
+    virtual int init(
+        int  argc,
+        const char *argv[]
+    )
+    {
+        optparse::Values &values = parser.parse_args(argc, argv);
+        auto args = parser.args();
+        if(args.size() == 2)
+        {
+            std::istringstream(args[1]) >> mNbTop;
+        }
+        return 0;
+    }
+
+    virtual void start(const Block *start, const Block *end)
+    {
+        mTop.reserve(end->height);
+    }
+
     virtual void wrapup()
     {
-        uint8_t bestHash[2*kSHA256ByteSize + 1];
-        toHex(bestHash, mBestBlock->hash);
-
+        const auto startTime = usecs();
+        std::partial_sort(mTop.begin(), mTop.begin() + mNbTop, mTop.end(), compareTo);
+        auto elapsed = usecs() - startTime;
+        fprintf(stderr, "lowestHash: sorted top %d elements in %.3f secs\n", mNbTop, elapsed*1e-6);
+        uint8_t hash[2*kSHA256ByteSize + 1];
         printf("\n");
-        printf("    lowest hash ever = %s in block %" PRIu64 "\n", bestHash, mBestBlock->height - 1);
+        for(int i = 0; i < mNbTop; i++)
+        {
+            toHex(hash, mTop[i]->hash);
+            printf("|  %6d  |  %6" PRIu64 "  |  %s\n", i + 1, mTop[i]->height - 1, hash);
+        }
         printf("\n");
     }
 
     virtual void startBlock(const Block *b, uint64_t chainSize)
     {
-        if(NULL == mBestBlock)
-        {
-            mBestBlock = b;
-            return;
-        }
-        for (int i = kSHA256ByteSize - 1; i >= 0; i--)
-        {
-            if (b->hash[i] < mBestBlock->hash[i])
-            {
-                mBestBlock = b;
-                return;
-            }
-            if (b->hash[i] > mBestBlock->hash[i])
-            {
-                return;
-            }
-        }
+        mTop.push_back(b);
     }
 };
 

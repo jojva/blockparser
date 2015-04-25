@@ -451,6 +451,7 @@ static void parseLongestChain() {
             parseBlock(blk);
             blk = blk->next;
         }
+        fprintf(stderr, "                                      \r");
 
     gCallback->wrapup();
 
